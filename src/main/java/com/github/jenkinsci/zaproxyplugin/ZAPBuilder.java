@@ -1,13 +1,25 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 ZAP Jenkins Plugin and its related class files.
+ * Copyright (c) 2016 Official ZAP Jenkins Plugin and its related class files.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package com.github.jenkinsci.zaproxyplugin;
@@ -105,31 +117,33 @@ public class ZAPBuilder extends Builder {
 
         Utils.lineBreak(listener);
         Utils.loggerMessage(listener, 0, "[{0}] START PRE-BUILD ENVIRONMENT VARIABLE REPLACEMENT", Utils.ZAP);
-        
+
         /* Replaces the environment variables with the corresponding values */
         String zapHost = zaproxy.getZapHost();
         if (zapHost == null || zapHost.isEmpty()) throw new IllegalArgumentException("ZAP HOST IS MISSING");
         String zapPort = zaproxy.getZapPort();
         if (zapPort == null || zapPort.isEmpty()) throw new IllegalArgumentException("ZAP PORT IS MISSING");
         String zapSettingsDir = zaproxy.getZapSettingsDir();
+        String sessionFilename = zaproxy.getSessionFilename();
         String contextName = zaproxy.getContextName();
         String includedURL = zaproxy.getIncludedURL();
         String excludedURL = zaproxy.getExcludedURL();
         String targetURL = zaproxy.getTargetURL();
         String reportName = zaproxy.getReportFilename();
-        String sessionFilename = zaproxy.getSessionFilename();
+        String reportTitle = zaproxy.getExportreportTitle();
         ArrayList<ZAPCmdLine> cmdLinesZap = new ArrayList<ZAPCmdLine>(zaproxy.getCmdLinesZAP().size());
 
         try {
             zapHost = applyMacro(build, listener, zapHost);
             zapPort = applyMacro(build, listener, zapPort);
             zapSettingsDir = applyMacro(build, listener, zapSettingsDir);
+            sessionFilename = applyMacro(build, listener, sessionFilename);
             contextName = applyMacro(build, listener, contextName);
             includedURL = applyMacro(build, listener, includedURL);
             excludedURL = applyMacro(build, listener, excludedURL);
             targetURL = applyMacro(build, listener, targetURL);
             reportName = applyMacro(build, listener, reportName);
-            sessionFilename = applyMacro(build, listener, sessionFilename);
+            reportTitle = applyMacro(build, listener, reportTitle);
             for (ZAPCmdLine cmdLineZap : zaproxy.getCmdLinesZAP())
                 cmdLinesZap.add(new ZAPCmdLine(applyMacro(build, listener, cmdLineZap.getCmdLineOption()), applyMacro(build, listener, cmdLineZap.getCmdLineValue())));
         }
@@ -142,18 +156,20 @@ public class ZAPBuilder extends Builder {
         zaproxy.setEvaluatedZapHost(zapHost);
         zaproxy.setEvaluatedZapPort(Integer.valueOf(zapPort));
         zaproxy.setEvaluatedZapSettingsDir(zapSettingsDir);
+        zaproxy.setEvaluatedSessionFilename(sessionFilename);
         zaproxy.setEvaluatedContextName(contextName);
         zaproxy.setEvaluatedIncludedURL(includedURL);
         zaproxy.setEvaluatedExcludedURL(excludedURL);
         zaproxy.setEvaluatedTargetURL(targetURL);
         zaproxy.setEvaluatedReportFilename(reportName);
-        zaproxy.setEvaluatedSessionFilename(sessionFilename);
+        zaproxy.setEvaluatedExportreportTitle(reportTitle);
         zaproxy.setEvaluatedCmdLinesZap(cmdLinesZap);
 
         Utils.loggerMessage(listener, 1, "HOST = [ {0} ]", zapHost);
         Utils.loggerMessage(listener, 1, "PORT = [ {0} ]", zapPort);
         Utils.lineBreak(listener);
         Utils.loggerMessage(listener, 1, "ZAP SETTINGS DIRECTORY = [ {0} ]", zapSettingsDir);
+        Utils.loggerMessage(listener, 1, "SESSION FILENAME = [ {0} ]", sessionFilename);
         Utils.loggerMessage(listener, 1, "CONTEXT NAME = [ {0} ]", contextName);
         Utils.lineBreak(listener);
         Utils.loggerMessage(listener, 1, "INCLUDE IN CONTEXT = [ {0} ]", includedURL.trim().replace("\n", ", "));
@@ -162,7 +178,7 @@ public class ZAPBuilder extends Builder {
         Utils.lineBreak(listener);
         Utils.loggerMessage(listener, 1, "STARTING POINT (URL) = [ {0} ]", targetURL);
         Utils.loggerMessage(listener, 1, "REPORT FILENAME = [ {0} ]", reportName);
-        Utils.loggerMessage(listener, 1, "SESSION FILENAME = [ {0} ]", sessionFilename);
+        Utils.loggerMessage(listener, 1, "REPORT TITLE = [ {0} ]", reportTitle);
         Utils.lineBreak(listener);
         // Utils.loggerMessage(listener, 1, "COMMAND LINE = [ {0} ] ", cmdLinesZap.toString().trim().substring(1, cmdLinesZap.toString().trim().length() - 1));
         Utils.loggerMessage(listener, 1, "COMMAND LINE = {0}", cmdLinesZap.toString().trim().substring(1, cmdLinesZap.toString().trim().length() - 1).replace(",", ""));
@@ -221,7 +237,7 @@ public class ZAPBuilder extends Builder {
 
         boolean res;
         try {
-            res = build.getWorkspace().act(new ZAPDriverCallable(this.zaproxy, listener));
+            res = build.getWorkspace().act(new ZAPDriverCallable(listener, this.zaproxy));
             proc.joinWithTimeout(60L, TimeUnit.MINUTES, listener);
             Utils.lineBreak(listener);
             Utils.lineBreak(listener);
@@ -253,7 +269,7 @@ public class ZAPBuilder extends Builder {
             return Util.replaceMacro(macro, envVars);
         }
         catch (IOException e) {
-            listener.getLogger().println("Failed to apply macro " + macro);
+            Utils.loggerMessage(listener, 0, "[{0}] ERROR, FAILED TO APPLY MACRO: {1}", Utils.ZAP, macro);
             listener.error(ExceptionUtils.getStackTrace(e));
         }
         return macro;
@@ -334,16 +350,16 @@ public class ZAPBuilder extends Builder {
     private static class ZAPDriverCallable implements FileCallable<Boolean> {
 
         private static final long serialVersionUID = -313398999885177679L;
-        private ZAPDriver zaproxy;
         private BuildListener listener;
+        private ZAPDriver zaproxy;
 
-        public ZAPDriverCallable(ZAPDriver zaproxy, BuildListener listener) {
-            this.zaproxy = zaproxy;
+        public ZAPDriverCallable(BuildListener listener, ZAPDriver zaproxy) {
             this.listener = listener;
+            this.zaproxy = zaproxy;
         }
 
         @Override
-        public Boolean invoke(File f, VirtualChannel channel) { return zaproxy.executeZAP(new FilePath(f), listener); }
+        public Boolean invoke(File f, VirtualChannel channel) { return zaproxy.executeZAP(listener, new FilePath(f)); }
 
         @Override
         public void checkRoles(RoleChecker checker) throws SecurityException { /* N/A */ }
